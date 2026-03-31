@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>까멜리아 틱택토</title>
+  <style>
+    :root{
+      --bg1:#0f1724;
+      --bg2:#071022;
+      --card:rgba(11,18,32,0.9);
+      --line:rgba(255,255,255,0.08);
+      --text:#e6eef6;
+      --sub:#a9b6c9;
+      --accent:#f4b183;
+      --accent-strong:#ffcf9c;
+      --win:#10b981;
+      --lose:#ef4444;
+    }
+
+    *{box-sizing:border-box}
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans KR','Malgun Gothic',sans-serif;
+      background:linear-gradient(180deg,var(--bg1),var(--bg2));
+      color:var(--text);
+    }
+
+    body{
+      overflow:hidden;
+    }
+
+    .wrap{
+      min-height:100%;
+      display:grid;
+      place-items:center;
+      padding:20px;
+      position:relative;
+      background:
+        radial-gradient(circle at top left, rgba(244,177,131,0.18), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(255,255,255,0.04), transparent 20%);
+    }
+
+    .panel{
+      width:min(92vw,760px);
+      background:rgba(8,14,26,0.78);
+      border:1px solid rgba(255,255,255,0.06);
+      border-radius:24px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.35);
+      padding:24px;
+      backdrop-filter:blur(10px);
+    }
+
+    .top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:18px;
+    }
+
+    .title-box h1{
+      margin:0;
+      font-size:clamp(28px,4vw,40px);
+      line-height:1.1;
+      font-weight:800;
+      letter-spacing:-0.03em;
+    }
+
+    .title-box p{
+      margin:8px 0 0;
+      color:var(--sub);
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    #logo{
+      width:88px;
+      height:88px;
+      object-fit:contain;
+      opacity:0.95;
+      flex-shrink:0;
+    }
+
+    .status-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:18px;
+    }
+
+    .status{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+
+    .pill{
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.04);
+      border:1px solid var(--line);
+      font-size:14px;
+      color:var(--sub);
+    }
+
+    .pill strong{
+      color:var(--accent-strong);
+    }
+
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
+    button{
+      appearance:none;
+      border:none;
+      border-radius:14px;
+      padding:11px 16px;
+      cursor:pointer;
+      font-weight:700;
+      font-size:14px;
+      transition:transform .15s ease, opacity .15s ease, background .15s ease;
+    }
+
+    button:hover{transform:translateY(-1px)}
+    button:active{transform:translateY(0)}
+
+    .btn-primary{
+      background:linear-gradient(180deg,#f1ba92,#d89b6f);
+      color:#1a1a1a;
+    }
+
+    .btn-secondary{
+      background:rgba(255,255,255,0.05);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .board{
+      width:min(86vw,520px);
+      height:min(86vw,520px);
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      grid-template-rows:repeat(3,1fr);
+      gap:12px;
+      padding:14px;
+      border-radius:22px;
+      background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015));
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 10px 40px rgba(0,0,0,0.28);
+    }
+
+    .cell{
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.05);
+      border-radius:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+      cursor:pointer;
+      user-select:none;
+      transition:background .18s ease, transform .18s ease, border-color .18s ease;
+    }
+
+    .cell:hover{
+      background:rgba(255,255,255,0.065);
+      transform:translateY(-1px);
+    }
+
+    .cell.disabled{
+      cursor:default;
+    }
+
+    .cell img{
+      width:72%;
+      height:72%;
+      object-fit:contain;
+      opacity:0;
+      transform:scale(0.84);
+      transition:opacity .22s ease, transform .22s cubic-bezier(.2,.9,.3,1);
+      pointer-events:none;
+    }
+
+    .cell.filled img{
+      opacity:1;
+      transform:scale(1);
+    }
+
+    .cell.win{
+      border-color:rgba(16,185,129,0.7);
+      box-shadow:0 0 0 2px rgba(16,185,129,0.15) inset, 0 0 28px rgba(16,185,129,0.15);
+    }
+
+    .guide{
+      text-align:center;
+      color:var(--sub);
+      font-size:13px;
+      margin-top:14px;
+      line-height:1.5;
+    }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(0,0,0,0.68);
+      z-index:100;
+    }
+
+    .modal.show{
+      display:flex;
+    }
+
+    .modal-card{
+      width:min(92vw,520px);
+      background:linear-gradient(180deg,rgba(12,20,36,0.98),rgba(8,12,24,0.98));
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:24px;
+      box-shadow:0 24px 70px rgba(0,0,0,0.45);
+      padding:28px 22px;
+      text-align:center;
+    }
+
+    .modal-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:104px;
+      padding:8px 14px;
+      border-radius:999px;
+      font-weight:800;
+      margin-bottom:14px;
+      font-size:14px;
+    }
+
+    .modal-badge.win{background:rgba(16,185,129,0.14); color:#7ef0bf;}
+    .modal-badge.lose{background:rgba(239,68,68,0.14); color:#ff9f9f;}
+    .modal-badge.draw{background:rgba(255,255,255,0.1); color:#f3f4f6;}
+
+    .modal h2{
+      margin:0;
+      font-size:clamp(26px,5vw,38px);
+      line-height:1.15;
+    }
+
+    .modal p{
+      margin:12px 0 0;
+      color:var(--sub);
+      font-size:15px;
+      line-height:1.6;
+    }
+
+    .answer-box{
+      margin-top:18px;
+      padding:18px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.04);
+      border:1px dashed rgba(244,177,131,0.45);
+    }
+
+    .answer-label{
+      font-size:12px;
+      color:var(--sub);
+      letter-spacing:0.08em;
+    }
+
+    .answer-text{
+      margin-top:8px;
+      font-size:clamp(24px,6vw,40px);
+      font-weight:900;
+      color:var(--accent-strong);
+      letter-spacing:0.04em;
+    }
+
+    .modal .modal-actions{
+      margin-top:20px;
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+
+    @media (max-width:640px){
+      .panel{padding:18px}
+      .top{align-items:center}
+      #logo{width:68px;height:68px}
+      .board{gap:9px;padding:10px;border-radius:18px}
+      .cell{border-radius:14px}
+      .status-row{align-items:stretch}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div class="top">
+        <div class="title-box">
+          <h1>까멜리아 틱택토</h1>
+          <p>까불이와 틱택토 대결을 진행하세요.<br>승리하면 방탈출 정답이 공개됩니다.</p>
+        </div>
+        <img id="logo" src="logo.png" alt="카멜리아 로고" />
+      </div>
+
+      <div class="status-row">
+        <div class="status">
+          <div class="pill">플레이어: <strong id="playerSideText">X</strong></div>
+          <div class="pill">현재 턴: <strong id="turnTxt">플레이어</strong></div>
+        </div>
+
+        <div class="controls">
+          <button class="btn-secondary" id="swapBtn">선공 변경</button>
+          <button class="btn-primary" id="resetBtn">다시 시작</button>
+        </div>
+      </div>
+
+      <div class="board" id="board"></div>
+      <div class="guide">플레이어가 승리하면 정답이 공개됩니다.</div>
+    </div>
+  </div>
+
+  <div class="modal" id="resultModal">
+    <div class="modal-card">
+      <div class="modal-badge win" id="modalBadge">SUCCESS</div>
+      <h2 id="modalTitle">정답 획득!</h2>
+      <p id="modalDesc">축하합니다. 틱택토에서 승리했습니다.</p>
+
+      <div class="answer-box" id="answerBox">
+        <div class="answer-label">정답</div>
+        <div class="answer-text" id="answerText">동백꽃</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-primary" id="modalResetBtn">한 번 더 하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ANSWER_TEXT = '정답'; // 여기만 실제 정답으로 바꾸면 됨
+
+    const boardEl = document.getElementById('board');
+    const turnTxt = document.getElementById('turnTxt');
+    const resetBtn = document.getElementById('resetBtn');
+    const swapBtn = document.getElementById('swapBtn');
+    const playerSideText = document.getElementById('playerSideText');
+    const resultModal = document.getElementById('resultModal');
+    const modalBadge = document.getElementById('modalBadge');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDesc = document.getElementById('modalDesc');
+    const answerBox = document.getElementById('answerBox');
+    const answerText = document.getElementById('answerText');
+    const modalResetBtn = document.getElementById('modalResetBtn');
+
+    const modelFiles = {
+      X: 'player.png',
+      O: 'system.png'
+    };
+
+    let board = Array(9).fill(null);
+    let playerSymbol = 'X';
+    let aiSymbol = 'O';
+    let currentTurn = 'X';
+    let gameOver = false;
+
+    function createBoard(){
+      boardEl.innerHTML = '';
+      for(let i = 0; i < 9; i++){
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = i;
+
+        const img = document.createElement('img');
+        img.alt = '';
+        cell.appendChild(img);
+
+        boardEl.appendChild(cell);
+      }
+    }
+
+    function renderBoard(){
+      [...boardEl.children].forEach((cell, i) => {
+        const value = board[i];
+        let img = cell.querySelector('img');
+
+        if(!img){
+          img = document.createElement('img');
+          img.alt = '';
+          cell.innerHTML = '';
+          cell.appendChild(img);
+        }
+
+        cell.classList.remove('filled', 'win');
+        cell.classList.toggle('disabled', gameOver || currentTurn !== playerSymbol);
+        cell.style.fontSize = '';
+        cell.style.fontWeight = '';
+
+        if(value){
+          img.src = modelFiles[value];
+          img.style.display = 'block';
+          img.onerror = () => {
+            img.style.display = 'none';
+            cell.textContent = value;
+            cell.style.fontSize = '44px';
+            cell.style.fontWeight = '800';
+          };
+          cell.classList.add('filled');
+        }else{
+          cell.textContent = '';
+          img = document.createElement('img');
+          img.alt = '';
+          cell.appendChild(img);
+          img.src = '';
+          img.style.display = 'block';
+        }
+      });
+    }
+
+    function updateStatus(){
+      playerSideText.textContent = playerSymbol;
+      if(gameOver) return;
+      turnTxt.textContent = currentTurn === playerSymbol ? '플레이어' : '시스템';
+    }
+
+    function getWinningLine(){
+      const wins = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+
+      for(const [a,b,c] of wins){
+        if(board[a] && board[a] === board[b] && board[b] === board[c]){
+          return [a,b,c];
+        }
+      }
+      return null;
+    }
+
+    function checkWinner(){
+      const line = getWinningLine();
+      return line ? board[line[0]] : null;
+    }
+
+    function highlightWin(){
+      const line = getWinningLine();
+      if(!line) return;
+      line.forEach(index => {
+        boardEl.children[index].classList.add('win');
+      });
+    }
+
+    function openModal(type){
+      resultModal.classList.add('show');
+      answerText.textContent = ANSWER_TEXT;
+
+      if(type === 'win'){
+        modalBadge.className = 'modal-badge win';
+        modalBadge.textContent = 'SUCCESS';
+        modalTitle.textContent = '정답 획득!';
+        modalDesc.textContent = '축하합니다. 시스템을 이겼습니다.';
+        answerBox.style.display = 'block';
+      }else if(type === 'lose'){
+        modalBadge.className = 'modal-badge lose';
+        modalBadge.textContent = 'FAIL';
+        modalTitle.textContent = '실패!';
+        modalDesc.textContent = '시스템이 먼저 완성했습니다. 다시 도전해보세요.';
+        answerBox.style.display = 'none';
+      }else{
+        modalBadge.className = 'modal-badge draw';
+        modalBadge.textContent = 'DRAW';
+        modalTitle.textContent = '무승부';
+        modalDesc.textContent = '아쉽지만 정답은 공개되지 않습니다. 다시 도전해보세요.';
+        answerBox.style.display = 'none';
+      }
+    }
+
+    function closeModal(){
+      resultModal.classList.remove('show');
+    }
+
+    function finishGame(result){
+      gameOver = true;
+      highlightWin();
+      turnTxt.textContent = '종료';
+      openModal(result);
+      renderBoard();
+    }
+
+    function randomAIMove(){
+      if(gameOver) return;
+
+      const emptyIndexes = getEmptyIndexes();
+      if(emptyIndexes.length === 0) return;
+
+      const bestMove = getMediumAIMove();
+      board[bestMove] = aiSymbol;
+      renderBoard();
+
+      const winner = checkWinner();
+      if(winner === aiSymbol){
+        finishGame('lose');
+        return;
+      }
+
+      if(board.every(Boolean)){
+        finishGame('draw');
+        return;
+      }
+
+      currentTurn = playerSymbol;
+      updateStatus();
+      renderBoard();
+    }
+
+    function getEmptyIndexes(){
+      return board
+        .map((value, index) => value === null ? index : null)
+        .filter(index => index !== null);
+    }
+
+    function findWinningMove(symbol){
+      const emptyIndexes = getEmptyIndexes();
+
+      for(const index of emptyIndexes){
+        board[index] = symbol;
+        const isWinner = checkWinner() === symbol;
+        board[index] = null;
+        if(isWinner) return index;
+      }
+
+      return null;
+    }
+
+    function getMediumAIMove(){
+      const emptyIndexes = getEmptyIndexes();
+
+      const winningMove = findWinningMove(aiSymbol);
+      if(winningMove !== null) return winningMove;
+
+      const blockingMove = findWinningMove(playerSymbol);
+      if(blockingMove !== null) return blockingMove;
+
+      if(board[4] === null) return 4;
+
+      const corners = [0, 2, 6, 8].filter(index => board[index] === null);
+      if(corners.length > 0){
+        return corners[Math.floor(Math.random() * corners.length)];
+      }
+
+      const sides = [1, 3, 5, 7].filter(index => board[index] === null);
+      if(sides.length > 0){
+        return sides[Math.floor(Math.random() * sides.length)];
+      }
+
+      return emptyIndexes[Math.floor(Math.random() * emptyIndexes.length)];
+    }
+
+    function handlePlayerMove(index){
+      if(gameOver) return;
+      if(currentTurn !== playerSymbol) return;
+      if(board[index]) return;
+
+      board[index] = playerSymbol;
+      renderBoard();
+
+      const winner = checkWinner();
+      if(winner === playerSymbol){
+        finishGame('win');
+        return;
+      }
+
+      if(board.every(Boolean)){
+        finishGame('draw');
+        return;
+      }
+
+      currentTurn = aiSymbol;
+      updateStatus();
+      renderBoard();
+
+      window.setTimeout(randomAIMove, 420);
+    }
+
+    function resetGame(startSymbol = playerSymbol){
+      closeModal();
+      board = Array(9).fill(null);
+      gameOver = false;
+      currentTurn = startSymbol;
+      createBoard();
+      renderBoard();
+      updateStatus();
+
+      if(currentTurn === aiSymbol){
+        turnTxt.textContent = '시스템';
+        window.setTimeout(randomAIMove, 550);
+      }
+    }
+
+    function swapOrder(){
+      playerSymbol = playerSymbol === 'X' ? 'O' : 'X';
+      aiSymbol = playerSymbol === 'X' ? 'O' : 'X';
+      resetGame('X');
+    }
+
+    boardEl.addEventListener('click', (event) => {
+      const cell = event.target.closest('.cell');
+      if(!cell) return;
+      handlePlayerMove(Number(cell.dataset.index));
+    });
+
+    resetBtn.addEventListener('click', () => resetGame('X'));
+    swapBtn.addEventListener('click', swapOrder);
+    modalResetBtn.addEventListener('click', () => resetGame('X'));
+    resultModal.addEventListener('click', (event) => {
+      if(event.target === resultModal){
+        resetGame('X');
+      }
+    });
+
+    createBoard();
+    renderBoard();
+    updateStatus();
+  </script>
+</body>
+</html>
