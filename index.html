@@ -8,14 +8,11 @@
     :root{
       --bg1:#0f1724;
       --bg2:#071022;
-      --card:rgba(11,18,32,0.9);
       --line:rgba(255,255,255,0.08);
       --text:#e6eef6;
       --sub:#a9b6c9;
       --accent:#f4b183;
       --accent-strong:#ffcf9c;
-      --win:#10b981;
-      --lose:#ef4444;
     }
 
     *{box-sizing:border-box}
@@ -27,9 +24,7 @@
       color:var(--text);
     }
 
-    body{
-      overflow:hidden;
-    }
+    body{overflow:hidden}
 
     .wrap{
       min-height:100%;
@@ -137,12 +132,6 @@
       color:#1a1a1a;
     }
 
-    .btn-secondary{
-      background:rgba(255,255,255,0.05);
-      color:var(--text);
-      border:1px solid var(--line);
-    }
-
     .board{
       width:min(86vw,520px);
       height:min(86vw,520px);
@@ -176,9 +165,7 @@
       transform:translateY(-1px);
     }
 
-    .cell.disabled{
-      cursor:default;
-    }
+    .cell.disabled{cursor:default}
 
     .cell img{
       width:72%;
@@ -219,9 +206,7 @@
       z-index:100;
     }
 
-    .modal.show{
-      display:flex;
-    }
+    .modal.show{display:flex}
 
     .modal-card{
       width:min(92vw,520px);
@@ -307,20 +292,19 @@
     <div class="panel">
       <div class="top">
         <div class="title-box">
-          <h1>까멜리아 틱택토</h1>
-          <p>까불이와 틱택토 대결을 진행하세요.<br>승리하면 방탈출 정답이 공개됩니다.</p>
+          <h1>까불이를 잡아라. 틱택토</h1>
+          <p>까불이와 틱택토 대결을 진행하세요. 한 줄을 먼저 완성하면 승리합니다.<br>승리하면 방탈출 정답이 공개됩니다.</p>
         </div>
-        <img id="logo" src="logo.png" alt="카멜리아 로고" />
+        <img id="logo" src="logo.png" alt="까멜리아 로고" />
       </div>
 
       <div class="status-row">
         <div class="status">
-          <div class="pill">플레이어: <strong id="playerSideText">X</strong></div>
-          <div class="pill">현재 턴: <strong id="turnTxt">플레이어</strong></div>
+          <div class="pill">플레이어 말: <strong id="playerSideText">동백꽃</strong></div>
+          <div class="pill">현재 턴: <strong id="turnTxt">동백꽃</strong></div>
         </div>
 
         <div class="controls">
-          <button class="btn-secondary" id="swapBtn">선공 변경</button>
           <button class="btn-primary" id="resetBtn">다시 시작</button>
         </div>
       </div>
@@ -348,12 +332,11 @@
   </div>
 
   <script>
-    const ANSWER_TEXT = '정답'; // 여기만 실제 정답으로 바꾸면 됨
+    const ANSWER_TEXT = '흥식이'; // 여기만 실제 정답으로 바꾸면 됨
 
     const boardEl = document.getElementById('board');
     const turnTxt = document.getElementById('turnTxt');
     const resetBtn = document.getElementById('resetBtn');
-    const swapBtn = document.getElementById('swapBtn');
     const playerSideText = document.getElementById('playerSideText');
     const resultModal = document.getElementById('resultModal');
     const modalBadge = document.getElementById('modalBadge');
@@ -364,15 +347,16 @@
     const modalResetBtn = document.getElementById('modalResetBtn');
 
     const modelFiles = {
-      X: 'player.png',
-      O: 'system.png'
+      X: '동백꽃.png',
+      O: '까불이.png'
     };
 
     let board = Array(9).fill(null);
-    let playerSymbol = 'X';
-    let aiSymbol = 'O';
+    const playerSymbol = 'X';
+    const aiSymbol = 'O';
     let currentTurn = 'X';
     let gameOver = false;
+    let completedGames = 0;
 
     function createBoard(){
       boardEl.innerHTML = '';
@@ -389,16 +373,21 @@
       }
     }
 
+    function resetCellToImage(cell){
+      cell.innerHTML = '';
+      const img = document.createElement('img');
+      img.alt = '';
+      cell.appendChild(img);
+      return img;
+    }
+
     function renderBoard(){
       [...boardEl.children].forEach((cell, i) => {
         const value = board[i];
         let img = cell.querySelector('img');
 
         if(!img){
-          img = document.createElement('img');
-          img.alt = '';
-          cell.innerHTML = '';
-          cell.appendChild(img);
+          img = resetCellToImage(cell);
         }
 
         cell.classList.remove('filled', 'win');
@@ -410,17 +399,13 @@
           img.src = modelFiles[value];
           img.style.display = 'block';
           img.onerror = () => {
-            img.style.display = 'none';
-            cell.textContent = value;
-            cell.style.fontSize = '44px';
+            cell.textContent = value === playerSymbol ? '동백꽃' : '까불이';
+            cell.style.fontSize = '20px';
             cell.style.fontWeight = '800';
           };
           cell.classList.add('filled');
         }else{
-          cell.textContent = '';
-          img = document.createElement('img');
-          img.alt = '';
-          cell.appendChild(img);
+          img = resetCellToImage(cell);
           img.src = '';
           img.style.display = 'block';
         }
@@ -428,9 +413,9 @@
     }
 
     function updateStatus(){
-      playerSideText.textContent = playerSymbol;
+      playerSideText.textContent = '동백꽃';
       if(gameOver) return;
-      turnTxt.textContent = currentTurn === playerSymbol ? '플레이어' : '시스템';
+      turnTxt.textContent = currentTurn === playerSymbol ? '동백꽃' : '까불이';
     }
 
     function getWinningLine(){
@@ -469,13 +454,13 @@
         modalBadge.className = 'modal-badge win';
         modalBadge.textContent = 'SUCCESS';
         modalTitle.textContent = '정답 획득!';
-        modalDesc.textContent = '축하합니다. 시스템을 이겼습니다.';
+        modalDesc.textContent = '축하합니다. 까불이를 이겼습니다.';
         answerBox.style.display = 'block';
       }else if(type === 'lose'){
         modalBadge.className = 'modal-badge lose';
         modalBadge.textContent = 'FAIL';
         modalTitle.textContent = '실패!';
-        modalDesc.textContent = '시스템이 먼저 완성했습니다. 다시 도전해보세요.';
+        modalDesc.textContent = '까불이가 먼저 완성했습니다. 다시 도전해보세요.';
         answerBox.style.display = 'none';
       }else{
         modalBadge.className = 'modal-badge draw';
@@ -492,13 +477,70 @@
 
     function finishGame(result){
       gameOver = true;
+      completedGames += 1;
       highlightWin();
       turnTxt.textContent = '종료';
       openModal(result);
       renderBoard();
     }
 
-    function randomAIMove(){
+    function getEmptyIndexes(){
+      return board
+        .map((value, index) => value === null ? index : null)
+        .filter(index => index !== null);
+    }
+
+    function findWinningMove(symbol){
+      const emptyIndexes = getEmptyIndexes();
+
+      for(const index of emptyIndexes){
+        board[index] = symbol;
+        const isWinner = checkWinner() === symbol;
+        board[index] = null;
+        if(isWinner) return index;
+      }
+
+      return null;
+    }
+
+    function shouldUseSideResponseAfterCenterStart(){
+      const playerMarks = board.filter(value => value === playerSymbol).length;
+      const aiMarks = board.filter(value => value === aiSymbol).length;
+      return completedGames >= 1 && playerMarks === 1 && aiMarks === 0 && board[4] === playerSymbol;
+    }
+
+    function getMediumAIMove(){
+      const emptyIndexes = getEmptyIndexes();
+
+      if(shouldUseSideResponseAfterCenterStart()){
+        const sidesOnly = [1, 3, 5, 7].filter(index => board[index] === null);
+        if(sidesOnly.length > 0){
+          return sidesOnly[Math.floor(Math.random() * sidesOnly.length)];
+        }
+      }
+
+      const winningMove = findWinningMove(aiSymbol);
+      if(winningMove !== null) return winningMove;
+
+      const blockingMove = findWinningMove(playerSymbol);
+      if(blockingMove !== null) return blockingMove;
+
+      if(board[4] === null) return 4;
+
+      const corners = [0, 2, 6, 8].filter(index => board[index] === null);
+      if(corners.length > 0){
+        return corners[Math.floor(Math.random() * corners.length)];
+      }
+
+      const sides = [1, 3, 5, 7].filter(index => board[index] === null);
+      if(sides.length > 0){
+        return sides[Math.floor(Math.random() * sides.length)];
+      }
+
+      return emptyIndexes[Math.floor(Math.random() * emptyIndexes.length)];
+    }
+
+    function aiMove(){
       if(gameOver) return;
 
       const emptyIndexes = getEmptyIndexes();
@@ -524,49 +566,6 @@
       renderBoard();
     }
 
-    function getEmptyIndexes(){
-      return board
-        .map((value, index) => value === null ? index : null)
-        .filter(index => index !== null);
-    }
-
-    function findWinningMove(symbol){
-      const emptyIndexes = getEmptyIndexes();
-
-      for(const index of emptyIndexes){
-        board[index] = symbol;
-        const isWinner = checkWinner() === symbol;
-        board[index] = null;
-        if(isWinner) return index;
-      }
-
-      return null;
-    }
-
-    function getMediumAIMove(){
-      const emptyIndexes = getEmptyIndexes();
-
-      const winningMove = findWinningMove(aiSymbol);
-      if(winningMove !== null) return winningMove;
-
-      const blockingMove = findWinningMove(playerSymbol);
-      if(blockingMove !== null) return blockingMove;
-
-      if(board[4] === null) return 4;
-
-      const corners = [0, 2, 6, 8].filter(index => board[index] === null);
-      if(corners.length > 0){
-        return corners[Math.floor(Math.random() * corners.length)];
-      }
-
-      const sides = [1, 3, 5, 7].filter(index => board[index] === null);
-      if(sides.length > 0){
-        return sides[Math.floor(Math.random() * sides.length)];
-      }
-
-      return emptyIndexes[Math.floor(Math.random() * emptyIndexes.length)];
-    }
-
     function handlePlayerMove(index){
       if(gameOver) return;
       if(currentTurn !== playerSymbol) return;
@@ -590,28 +589,17 @@
       updateStatus();
       renderBoard();
 
-      window.setTimeout(randomAIMove, 420);
+      window.setTimeout(aiMove, 420);
     }
 
-    function resetGame(startSymbol = playerSymbol){
+    function resetGame(){
       closeModal();
       board = Array(9).fill(null);
       gameOver = false;
-      currentTurn = startSymbol;
+      currentTurn = playerSymbol;
       createBoard();
       renderBoard();
       updateStatus();
-
-      if(currentTurn === aiSymbol){
-        turnTxt.textContent = '시스템';
-        window.setTimeout(randomAIMove, 550);
-      }
-    }
-
-    function swapOrder(){
-      playerSymbol = playerSymbol === 'X' ? 'O' : 'X';
-      aiSymbol = playerSymbol === 'X' ? 'O' : 'X';
-      resetGame('X');
     }
 
     boardEl.addEventListener('click', (event) => {
@@ -620,12 +608,11 @@
       handlePlayerMove(Number(cell.dataset.index));
     });
 
-    resetBtn.addEventListener('click', () => resetGame('X'));
-    swapBtn.addEventListener('click', swapOrder);
-    modalResetBtn.addEventListener('click', () => resetGame('X'));
+    resetBtn.addEventListener('click', resetGame);
+    modalResetBtn.addEventListener('click', resetGame);
     resultModal.addEventListener('click', (event) => {
       if(event.target === resultModal){
-        resetGame('X');
+        resetGame();
       }
     });
 
