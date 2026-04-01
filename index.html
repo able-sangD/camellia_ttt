@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>까불이를 잡아라. 틱택토</title>
+  <title>까불이 틱택토</title>
   <style>
     :root{
       --bg1:#0f1724;
@@ -276,6 +276,12 @@
       justify-content:center;
       flex-wrap:wrap;
     }
+    .highlight-msg{
+  color:#ff8fab;
+  font-weight:900;
+  font-size:18px;
+  text-shadow:0 0 10px rgba(255,143,171,0.35);
+}
 
     @media (max-width:640px){
       .panel{padding:18px}
@@ -293,7 +299,7 @@
       <div class="top">
         <div class="title-box">
           <h1>까불이 틱택토</h1>
-          <p>까불이와 틱택토 대결을 진행하세요.<br>한 줄을 먼저 완성하면 승리합니다.<br>승리하면 방탈출 정답이 공개됩니다.<br>"10번 찍어 안 넘어가는 나무 없다"</p>
+          <p id="introText">까불이와 틱택토 대결을 진행하세요.<br>한 줄을 먼저 완성하면 승리합니다.<br>승리하면 방탈출 정답이 공개됩니다.</p>
         </div>
         <img id="logo" src="logo.png" alt="까멜리아 로고" />
       </div>
@@ -340,6 +346,7 @@
     const roundTxt = document.getElementById('roundTxt');
     const resetBtn = document.getElementById('resetBtn');
     const playerSideText = document.getElementById('playerSideText');
+    const introText = document.getElementById('introText');
     const resultModal = document.getElementById('resultModal');
     const modalBadge = document.getElementById('modalBadge');
     const modalTitle = document.getElementById('modalTitle');
@@ -424,6 +431,12 @@
     function updateStatus(){
       playerSideText.textContent = '동백꽃';
       roundTxt.textContent = getCurrentRound();
+
+      if(getCurrentRound() >= 4){
+  introText.innerHTML = '까불이와 틱택토 대결을 진행하세요.<br>한 줄을 먼저 완성하면 승리합니다.<br>승리하면 방탈출 정답이 공개됩니다.<br><span class="highlight-msg">"10번 찍어 안 넘어가는 까불이 없다"</span>';
+}else{
+  introText.innerHTML = '까불이와 틱택토 대결을 진행하세요.<br>한 줄을 먼저 완성하면 승리합니다.<br>승리하면 방탈출 정답이 공개됩니다.';
+}
 
       if(gameOver){
         turnTxt.textContent = '종료';
@@ -519,9 +532,6 @@
       return null;
     }
 
-    // 6번째 판에서만:
-    // 플레이어가 첫 수를 가운데(4)에 두면
-    // 까불이는 코너가 아니라 상하좌우(1,3,5,7) 중 하나에 둔다.
     function shouldUseSideResponseAfterCenterStart(){
       const playerMarks = board.filter(value => value === playerSymbol).length;
       const aiMarks = board.filter(value => value === aiSymbol).length;
