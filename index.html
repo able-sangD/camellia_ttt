@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>까멜리아 틱택토</title>
+  <title>까불이를 잡아라. 틱택토</title>
   <style>
     :root{
       --bg1:#0f1724;
@@ -302,6 +302,7 @@
         <div class="status">
           <div class="pill">플레이어 말: <strong id="playerSideText">동백꽃</strong></div>
           <div class="pill">현재 턴: <strong id="turnTxt">동백꽃</strong></div>
+          <div class="pill">현재 판: <strong id="roundTxt">1</strong></div>
         </div>
 
         <div class="controls">
@@ -336,6 +337,7 @@
 
     const boardEl = document.getElementById('board');
     const turnTxt = document.getElementById('turnTxt');
+    const roundTxt = document.getElementById('roundTxt');
     const resetBtn = document.getElementById('resetBtn');
     const playerSideText = document.getElementById('playerSideText');
     const resultModal = document.getElementById('resultModal');
@@ -356,7 +358,14 @@
     const aiSymbol = 'O';
     let currentTurn = 'X';
     let gameOver = false;
+
+    // 끝까지 완료된 판 수
     let completedGames = 0;
+
+    // 현재 진행 중인 판 번호 = completedGames + 1
+    function getCurrentRound(){
+      return completedGames + 1;
+    }
 
     function createBoard(){
       boardEl.innerHTML = '';
@@ -414,7 +423,13 @@
 
     function updateStatus(){
       playerSideText.textContent = '동백꽃';
-      if(gameOver) return;
+      roundTxt.textContent = getCurrentRound();
+
+      if(gameOver){
+        turnTxt.textContent = '종료';
+        return;
+      }
+
       turnTxt.textContent = currentTurn === playerSymbol ? '동백꽃' : '까불이';
     }
 
@@ -477,11 +492,12 @@
 
     function finishGame(result){
       gameOver = true;
-      completedGames += 1;
       highlightWin();
-      turnTxt.textContent = '종료';
+      updateStatus();
       openModal(result);
-      renderBoard();
+
+      // 판이 끝났으므로 다음 판 번호로 넘어갈 준비
+      completedGames += 1;
     }
 
     function getEmptyIndexes(){
@@ -503,10 +519,19 @@
       return null;
     }
 
+    // 6번째 판에서만:
+    // 플레이어가 첫 수를 가운데(4)에 두면
+    // 까불이는 코너가 아니라 상하좌우(1,3,5,7) 중 하나에 둔다.
     function shouldUseSideResponseAfterCenterStart(){
       const playerMarks = board.filter(value => value === playerSymbol).length;
       const aiMarks = board.filter(value => value === aiSymbol).length;
-      return completedGames >= 1 && playerMarks === 1 && aiMarks === 0 && board[4] === playerSymbol;
+
+      return (
+        getCurrentRound() >= 6 &&
+        playerMarks === 1 &&
+        aiMarks === 0 &&
+        board[4] === playerSymbol
+      );
     }
 
     function getMediumAIMove(){
@@ -592,6 +617,8 @@
       window.setTimeout(aiMove, 420);
     }
 
+    // 현재 판만 리셋
+    // completedGames는 건드리지 않음
     function resetGame(){
       closeModal();
       board = Array(9).fill(null);
